@@ -1,4 +1,4 @@
-module github.com/johnfercher/maroto/v2
+module github.com/dennisj86/maroto
 
 go 1.21.1
 
