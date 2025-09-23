@@ -77,7 +77,6 @@ func (m *Maroto) AddPages(pages ...core.Page) {
 	for _, page := range pages {
 		if m.currentHeight != m.headerHeight {
 			m.FillPageToAddNew()
-			m.addHeader()
 		}
 		m.addRows(page.GetRows()...)
 	}
@@ -116,10 +115,17 @@ func (m *Maroto) AddAutoRow(cols ...core.Col) core.Row {
 // how many fit on the current page
 func (m *Maroto) FitsOnCurrentPage(rows ...core.Row) int {
 	totalHeight := 0.0
+	// When the current page is empty, we need to consider the global header height
+	// because it will be added before the first row on this page.
+	effectiveCurrent := m.currentHeight
+	if effectiveCurrent == 0 {
+		effectiveCurrent = m.headerHeight
+	}
+
 	for i, row := range rows {
 		row.SetConfig(m.config)
 		rowHeight := row.GetHeight(m.provider, &m.cell)
-		if fit := m.fitsOnCurrentPage(rowHeight, totalHeight+m.currentHeight); !fit {
+		if fit := m.fitsOnCurrentPage(rowHeight, totalHeight+effectiveCurrent); !fit {
 			return i
 		}
 		totalHeight += rowHeight
@@ -218,7 +224,6 @@ func (m *Maroto) FillPageToAddNew() {
 	}
 
 	p.SetConfig(m.config)
-	p.Add(m.header...)
 	p.Add(m.rows...)
 
 	m.pages = append(m.pages, p)
@@ -243,6 +248,12 @@ func (m *Maroto) addRow(r core.Row) {
 	}
 
 	r.SetConfig(m.config)
+
+	// If we are at the beginning of a new page, add the global header first
+	if m.currentHeight == 0 {
+		m.addHeader()
+	}
+
 	rowHeight := r.GetHeight(m.provider, &m.cell)
 
 	if m.fitsOnCurrentPage(rowHeight, m.currentHeight) {
@@ -255,9 +266,7 @@ func (m *Maroto) addRow(r core.Row) {
 	// on the page to force a new page
 	m.FillPageToAddNew()
 
-	m.addHeader()
-
-	// AddRows row on the new page
+	// AddRows row on the new page (header will be added automatically when currentHeight == 0)
 	m.currentHeight += rowHeight
 	m.rows = append(m.rows, r)
 }
