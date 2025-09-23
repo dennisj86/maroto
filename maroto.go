@@ -218,6 +218,7 @@ func (m *Maroto) FillPageToAddNew() {
 	}
 
 	p.SetConfig(m.config)
+	p.Add(m.header...)
 	p.Add(m.rows...)
 
 	m.pages = append(m.pages, p)
