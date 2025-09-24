@@ -147,8 +147,13 @@ func (m *Maroto) RegisterHeader(rows ...core.Row) error {
 	m.headerHeight = height
 	m.header = rows
 
+	// Add the header rows to the very first page without triggering the
+	// automatic header injection in addRow (which would duplicate the header).
 	for _, headerRow := range rows {
-		m.addRow(headerRow)
+		headerRow.SetConfig(m.config)
+		// Ensure height is computed using provider and cell, then append directly.
+		m.currentHeight += headerRow.GetHeight(m.provider, &m.cell)
+		m.rows = append(m.rows, headerRow)
 	}
 
 	return nil

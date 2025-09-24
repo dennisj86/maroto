@@ -54,11 +54,23 @@ func (l *List) BuildListWithFixedHeader(m core.Maroto) error {
 // addListToCurrentPage is responsible for adding the list to the current page and returning
 // the number of lines of content inserted.
 func (l *List) addListToCurrentPage(m *core.Maroto, header core.Row, list ...core.Row) int {
-	list = append([]core.Row{header}, list...)
-	amountRows := (*m).FitsOnCurrentPage(list...)
+	// Build the rows sequence for this page: header, optional spacer, then content
+	rows := []core.Row{header}
+
+	spacerCount := 0
+	if l.props.HeaderBottomMargin > 0 {
+		spacer := row.New(l.props.HeaderBottomMargin)
+		rows = append(rows, spacer)
+		spacerCount = 1
+	}
+
+	rows = append(rows, list...)
+
+	amountRows := (*m).FitsOnCurrentPage(rows...)
 	if amountRows >= l.props.MinimumRowsBypage {
-		(*m).AddRows(list[:amountRows]...)
-		return amountRows - 1
+		(*m).AddRows(rows[:amountRows]...)
+		// amountRows includes header and possible spacer; return only content rows added
+		return amountRows - 1 - spacerCount
 	}
 	return 0
 }
